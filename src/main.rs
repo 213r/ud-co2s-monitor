@@ -3,27 +3,43 @@ use hyper::{
     header::CONTENT_TYPE,
     service::{make_service_fn, service_fn},
     Body, Request, Response, Server,
+    StatusCode
 };
 use prometheus::{Encoder, Gauge, TextEncoder};
 use regex::Regex;
 use serialport;
 use std::{io, net::SocketAddr, time::Duration};
-
+use chrono::Local;
 use lazy_static::lazy_static;
 use prometheus::{opts, register_gauge};
 
 lazy_static! {
     static ref CO2PPM_GAUGE: Gauge =
         register_gauge!(opts!("udco2s_co2ppm", "CO2 ppm value",)).unwrap();
+    static ref HUM_GAUGE: Gauge =
+        register_gauge!(opts!("udco2s_hum", "Humidity value",)).unwrap();
+    static ref TEMP_GAUGE: Gauge =
+        register_gauge!(opts!("udco2s_temp", "Temperature value",)).unwrap();
 }
 
-fn parse_co2(input: &str) -> Option<f64> {
+#[derive(Debug, PartialEq)]
+struct UDCO2SDATA {
+    co2: f64,
+    hum: f64,
+    temp: f64,
+}
+
+fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     // The values for hum, tmp is not trustworthy.
-    let re = Regex::new(r"CO2=(?P<co2>[\d.]+),HUM=(?P<hum>[\d.]+),TMP=(?P<tmp>[\d.]+)").unwrap();
+    let re = Regex::new(r"CO2=(?P<co2>[\d.]+),HUM=(?P<hum>[\d.]+),TMP=(?P<temp>[\d.]+)").unwrap();
     match re.captures(input) {
         Some(caps) => {
-            let co2ppm: f64 = caps["co2"].parse().unwrap();
-            Some(co2ppm)
+            let data = UDCO2SDATA {
+                co2: caps["co2"].parse().unwrap(),
+                hum: caps["hum"].parse().unwrap(),
+                temp: caps["temp"].parse().unwrap(),
+            };
+            Some(data)
         }
         None => None,
     }
@@ -43,9 +59,13 @@ async fn monitor_co2ppm(port_name: String) {
             Ok(t) => {
                 let bytes = &buf[..t];
                 let data = String::from_utf8(bytes.to_vec()).unwrap();
-                let co2ppm = parse_co2(&data);
-                if let Some(co2ppm) = co2ppm {
-                    CO2PPM_GAUGE.set(co2ppm);
+                let data = parse_udco2s_data(&data);
+                if let Some(data) = data {
+                    let generated_at = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
+                    println!("[{generated_at}] {data:?}");
+                    CO2PPM_GAUGE.set(data.co2);
+                    HUM_GAUGE.set(data.hum);
+                    TEMP_GAUGE.set(data.temp);
                 } else {
                     eprintln!("Parsing is failed.");
                 }
@@ -61,9 +81,15 @@ async fn monitor_co2ppm(port_name: String) {
     }
 }
 
-async fn serve_req(_req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    let encoder = TextEncoder::new();
+async fn serve_req(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    if req.uri().path() != "/metrics" {
+        return  Ok(Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("Not Found".into())
+            .unwrap());
+    }
 
+    let encoder = TextEncoder::new();
     let metric_families = prometheus::gather();
     let mut buffer = vec![];
     encoder.encode(&metric_families, &mut buffer).unwrap();
@@ -83,7 +109,7 @@ async fn main() {
         .arg(
             Arg::new("port")
                 .long("port")
-                .help("The UD-CO2S device path for serial port. For Mac /dev/cu.usbmodem11401")
+                .help("The UD-CO2S device path for serial port. For Mac /dev/cu.usbmodem***. ")
                 .default_value("/dev/ttyACM0"),
         )
         .arg(
@@ -113,22 +139,24 @@ async fn main() {
         eprintln!("server error: {}", err);
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_co2_valid_input() {
-        let input = "CO2=400.5,HUM=50.2,TMP=25.3";
-        let result = parse_co2(input);
-        assert_eq!(result, Some(400.5));
-    }
+    fn test_parse_udco2s_data() {
+        // Valid input
+        let input = "CO2=400.0,HUM=50.0,TMP=25.0";
+        let expected_output = Some(UDCO2SDATA {
+            co2: 400.0,
+            hum: 50.0,
+            temp: 25.0,
+        });
+        assert_eq!(parse_udco2s_data(input), expected_output);
 
-    #[test]
-    fn test_parse_co2_invalid_input() {
-        let input = "HUM=50.2,TMP=25.3";
-        let result = parse_co2(input);
-        assert_eq!(result, None);
+        // Invalid input
+        let invalid_input = "CO2=invalid,HUM=50.0,TMP=25.0";
+        let expected_output = None;
+        assert_eq!(parse_udco2s_data(invalid_input), expected_output);
     }
 }
