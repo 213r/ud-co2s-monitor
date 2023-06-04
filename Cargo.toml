@@ -1,0 +1,17 @@
+[package]
+name = "ud-co2s-monitor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.71"
+chrono = "0.4.26"
+clap = "4.3.1"
+hyper = {version = "0.14", features = ["full"] }
+lazy_static = "1.4.0"
+prometheus = "0.13.3"
+regex = "1.8.3"
+serialport = "4.2.1"
+tokio = {version = "1.28", features = ["full"] }
