@@ -1,6 +1,6 @@
 # UD-CO2S Monitoring
 Graph visualization of CO2 ppm data measured by [UD-CO2S](https://www.iodata.jp/product/tsushin/iot/ud-co2s/) censor device.
-
+![garafana sample](./fig/grafana.png)
 ## tech stack
 rust
 prometheus
