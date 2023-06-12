@@ -31,8 +31,8 @@ pub fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T) {
     let mut port = serialport::new(port_name, BAUD_RATE)
         .timeout(Duration::from_secs(10))
         .open()
-        .map_err(|_| eprintln!("Can not open serial. THe UD-CO2S device path may be wrong"))
-        .unwrap();
+        .expect("Can not open serial. THe UD-CO2S device path may be wrong");
+    
     port.write("STA\r\n".as_bytes()).unwrap();
     let mut buf: Vec<u8> = vec![0; 100];
     let _ = loop {
