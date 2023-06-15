@@ -2,8 +2,14 @@ version: '3'
 services:
   prometheus:
     image: prom/prometheus
+    user: root 
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - /tmp/prometheus:/prometheus_data
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus_data' 
+      - '--web.enable-admin-api' 
     ports:
       - 9090:9090
   grafana:
