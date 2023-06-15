@@ -15,3 +15,7 @@ prometheus = "0.13.3"
 regex = "1.8.3"
 serialport = "4.2.1"
 tokio = {version = "1.28", features = ["full"] }
+
+[[bin]]
+name = "prometheus"
+path = "src/bin/prometheus_export.rs"
