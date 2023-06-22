@@ -1,12 +1,13 @@
-use regex::Regex;
-use std::io;
 use super::consumer::UDCO2SExporter;
 use chrono::Local;
-use tokio::time::{Duration, sleep};
+use regex::Regex;
+use serde_derive::Serialize;
+use std::io;
+use tokio::time::{sleep, Duration};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct UDCO2SDATA {
-    pub timestamp: i64, 
+    pub timestamp: i64,
     pub co2: f64,
     pub hum: f64,
     pub temp: f64,
@@ -18,7 +19,7 @@ fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     match re.captures(input) {
         Some(caps) => {
             let data = UDCO2SDATA {
-                timestamp: Local::now().timestamp(), 
+                timestamp: Local::now().timestamp(),
                 co2: caps["co2"].parse().unwrap(),
                 hum: caps["hum"].parse().unwrap(),
                 temp: caps["temp"].parse().unwrap(),
@@ -29,13 +30,17 @@ fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     }
 }
 
-pub async fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T, duration_sec: u64) {
+pub async fn monitor_co2ppm<T: UDCO2SExporter>(
+    port_name: &str,
+    consumer: &mut T,
+    duration_sec: u64,
+) {
     const BAUD_RATE: u32 = 115200;
     let mut port = serialport::new(port_name, BAUD_RATE)
         .timeout(Duration::from_secs(10))
         .open()
         .expect("Can not open serial. THe UD-CO2S device path may be wrong");
-    
+
     port.write("STA\r\n".as_bytes()).unwrap();
     let mut buf: Vec<u8> = vec![0; 100];
     loop {
@@ -59,7 +64,7 @@ pub async fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T, du
             Err(e) => eprintln!("{:?}", e),
         }
         sleep(Duration::from_secs(duration_sec)).await;
-    };
+    }
 }
 
 #[cfg(test)]

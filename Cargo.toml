@@ -9,13 +9,22 @@ edition = "2021"
 anyhow = "1.0.71"
 chrono = "0.4.26"
 clap = "4.3.1"
+config = "0.13.3"
 hyper = {version = "0.14", features = ["full"] }
 lazy_static = "1.4.0"
 prometheus = "0.13.3"
 regex = "1.8.3"
+rumqtt = "0.31.0"
+serde = "1.0.164"
+serde_derive = "1.0.164"
+serde_json = "1.0.97"
 serialport = {version="4.2.1", default-features = false}
 tokio = {version = "1.28", features = ["full"] }
 
 [[bin]]
 name = "prometheus"
 path = "src/bin/prometheus_export.rs"
+
+[[bin]]
+name = "awsiot"
+path = "src/bin/awsiot_export.rs"

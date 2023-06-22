@@ -2,16 +2,15 @@ use clap::{Arg, Command};
 use hyper::{
     header::CONTENT_TYPE,
     service::{make_service_fn, service_fn},
-    Body, Request, Response, Server,
-    StatusCode
+    Body, Request, Response, Server, StatusCode,
 };
 use prometheus::{Encoder, TextEncoder};
-use std::net::SocketAddr; 
-use ud_co2s_monitor::ud_co2s::prometheus_export_udco2s; 
+use std::net::SocketAddr;
+use ud_co2s_monitor::ud_co2s::prometheus_export_udco2s;
 
 async fn serve_req(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
     if req.uri().path() != "/metrics" {
-        return  Ok(Response::builder()
+        return Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body("Not Found".into())
             .unwrap());
@@ -50,7 +49,7 @@ async fn main() {
     let port_name = matches.get_one::<String>("port").unwrap().clone();
 
     tokio::spawn(prometheus_export_udco2s(port_name, 5));
-    
+
     let addr = matches
         .get_one::<String>("addr")
         .unwrap()
