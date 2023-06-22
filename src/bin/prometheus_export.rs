@@ -49,8 +49,8 @@ async fn main() {
         .get_matches();
     let port_name = matches.get_one::<String>("port").unwrap().clone();
 
-    tokio::spawn(prometheus_export_udco2s(port_name));
-
+    tokio::spawn(prometheus_export_udco2s(port_name, 5));
+    
     let addr = matches
         .get_one::<String>("addr")
         .unwrap()

@@ -1,10 +1,12 @@
 use regex::Regex;
-use std::{io, time::Duration};
+use std::io;
 use super::consumer::UDCO2SExporter;
 use chrono::Local;
+use tokio::time::{Duration, sleep};
 
 #[derive(Debug, PartialEq)]
 pub struct UDCO2SDATA {
+    pub timestamp: i64, 
     pub co2: f64,
     pub hum: f64,
     pub temp: f64,
@@ -16,6 +18,7 @@ fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     match re.captures(input) {
         Some(caps) => {
             let data = UDCO2SDATA {
+                timestamp: Local::now().timestamp(), 
                 co2: caps["co2"].parse().unwrap(),
                 hum: caps["hum"].parse().unwrap(),
                 temp: caps["temp"].parse().unwrap(),
@@ -26,7 +29,7 @@ fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     }
 }
 
-pub fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T) {
+pub async fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T, duration_sec: u64) {
     const BAUD_RATE: u32 = 115200;
     let mut port = serialport::new(port_name, BAUD_RATE)
         .timeout(Duration::from_secs(10))
@@ -35,15 +38,14 @@ pub fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T) {
     
     port.write("STA\r\n".as_bytes()).unwrap();
     let mut buf: Vec<u8> = vec![0; 100];
-    let _ = loop {
+    loop {
         match port.read(buf.as_mut_slice()) {
             Ok(t) => {
                 let bytes = &buf[..t];
                 let data = String::from_utf8(bytes.to_vec()).unwrap();
                 let data = parse_udco2s_data(&data);
                 if let Some(data) = data {
-                    let generated_at = Local::now().format("%Y/%m/%d %H:%M:%S").to_string();
-                    println!("[{generated_at}] {data:?}");
+                    println!("{data:?}");
                     consumer.set(&data);
                 } else {
                     eprintln!("Parsing is failed.");
@@ -56,7 +58,7 @@ pub fn monitor_co2ppm<T: UDCO2SExporter>(port_name: &str, consumer: &T) {
             }
             Err(e) => eprintln!("{:?}", e),
         }
-        //std::thread::sleep(Duration::from_secs(5));
+        sleep(Duration::from_secs(duration_sec)).await;
     };
 }
 
@@ -69,6 +71,7 @@ mod tests {
         // Valid input
         let input = "CO2=400.0,HUM=50.0,TMP=25.0";
         let expected_output = Some(UDCO2SDATA {
+            timestamp: Local::now().timestamp(),
             co2: 400.0,
             hum: 50.0,
             temp: 25.0,
