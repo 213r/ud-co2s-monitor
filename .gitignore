@@ -1,2 +1,5 @@
 /target
 /credentials
+*.toml
+!Cargo.toml
+!awsiot.toml

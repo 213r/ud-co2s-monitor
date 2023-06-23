@@ -31,9 +31,9 @@ fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     }
 }
 
-pub async fn monitor_co2ppm<T: UDCO2SExporter>(
+pub async fn monitor_co2ppm(
     port_name: &str,
-    consumer: &mut T,
+    consumers: &mut [Box<dyn UDCO2SExporter + Send>],
     duration_sec: u64,
 ) {
     const BAUD_RATE: u32 = 115200;
@@ -52,7 +52,10 @@ pub async fn monitor_co2ppm<T: UDCO2SExporter>(
                 let data = parse_udco2s_data(&data);
                 if let Some(data) = data {
                     println!("{data:?}");
-                    consumer.set(&data);
+                    // TODO: async run
+                    for c in consumers.iter_mut() {
+                        c.set(&data);
+                    }
                 } else {
                     eprintln!("Parsing is failed.");
                 }
