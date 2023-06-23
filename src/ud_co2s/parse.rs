@@ -7,7 +7,7 @@ use tokio::time::{sleep, Duration};
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct UDCO2SDATA {
-    pub timestamp: i64,
+    pub timestamp: String,
     pub co2: f64,
     pub hum: f64,
     pub temp: f64,
@@ -16,10 +16,11 @@ pub struct UDCO2SDATA {
 fn parse_udco2s_data(input: &str) -> Option<UDCO2SDATA> {
     // The values for hum, tmp is not trustworthy.
     let re = Regex::new(r"CO2=(?P<co2>[\d.]+),HUM=(?P<hum>[\d.]+),TMP=(?P<temp>[\d.]+)").unwrap();
+    let ts = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     match re.captures(input) {
         Some(caps) => {
             let data = UDCO2SDATA {
-                timestamp: Local::now().timestamp(),
+                timestamp: ts,
                 co2: caps["co2"].parse().unwrap(),
                 hum: caps["hum"].parse().unwrap(),
                 temp: caps["temp"].parse().unwrap(),
@@ -76,7 +77,7 @@ mod tests {
         // Valid input
         let input = "CO2=400.0,HUM=50.0,TMP=25.0";
         let expected_output = Some(UDCO2SDATA {
-            timestamp: Local::now().timestamp(),
+            timestamp: Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
             co2: 400.0,
             hum: 50.0,
             temp: 25.0,
