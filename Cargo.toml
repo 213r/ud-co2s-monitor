@@ -19,7 +19,7 @@ serde_derive = "1.0.164"
 serde_json = "1.0.97"
 serialport = {version="4.2.1", default-features = false}
 structopt = "0.3.26"
-tokio = {version = "1.28", features = ["full"] }
+tokio = { version = "1.28.2", features = ["rt","macros","rt-multi-thread"] }
 
 [[bin]]
 name = "udco2s_exporter"
