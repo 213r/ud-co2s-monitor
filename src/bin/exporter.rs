@@ -94,30 +94,27 @@ async fn main() {
         );
         return;
     }
+    if let Some(path_cfg_awsiot) = opt.path_cfg_awsiot {
+        let exporter = prepare_awsiot_exporter(&path_cfg_awsiot);
+        exporters.push(Box::new(exporter))
+    }
+    let addr = addr_prometheus
+        .parse::<SocketAddr>()
+        .map_err(|_| eprintln!("The address is invalid."))
+        .unwrap();
+    println!("Prometheus Server: Listening on http://{}", addr);
+    let mut exporters: Vec<Box<dyn UDCO2SExporter + Send>> =
+        vec![Box::new(UDCO2SPrometheusExporter)];
 
-    if let Some(addr_prometheus) = opt.addr_prometheus {
-        let addr = addr_prometheus
-            .parse::<SocketAddr>()
-            .map_err(|_| eprintln!("The address is invalid."))
-            .unwrap();
-        println!("Prometheus Server: Listening on http://{}", addr);
-        let mut exporters: Vec<Box<dyn UDCO2SExporter + Send>> =
-            vec![Box::new(UDCO2SPrometheusExporter)];
-        if let Some(path_cfg_awsiot) = opt.path_cfg_awsiot {
-            let exporter = prepare_awsiot_exporter(&path_cfg_awsiot);
-            exporters.push(Box::new(exporter))
-        }
+    tokio::spawn(async move {
+        monitor_co2ppm(&opt.port_udco2s.clone(), &mut exporters, DURATION_SEC).await;
+    });
 
-        tokio::spawn(async move {
-            monitor_co2ppm(&opt.port_udco2s.clone(), &mut exporters, DURATION_SEC).await;
-        });
+    let serve_future = Server::bind(&addr).serve(make_service_fn(|_| async {
+        Ok::<_, hyper::Error>(service_fn(serve_req))
+    }));
 
-        let serve_future = Server::bind(&addr).serve(make_service_fn(|_| async {
-            Ok::<_, hyper::Error>(service_fn(serve_req))
-        }));
-
-        if let Err(err) = serve_future.await {
-            eprintln!("server error: {}", err);
-        }
+    if let Err(err) = serve_future.await {
+        eprintln!("server error: {}", err);
     }
 }
