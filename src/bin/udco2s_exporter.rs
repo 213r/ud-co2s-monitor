@@ -51,6 +51,9 @@ pub struct Opt {
 
     #[structopt(long, about = "The path of awsiot config file. Ex. awsiot.toml")]
     pub path_cfg_awsiot: Option<String>,
+
+    #[structopt(long, default_value="raspi/udco2s", about = "The topic name of awsiot mqtt")]
+    pub topic_awsiot: String,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
@@ -60,10 +63,9 @@ struct AWSIOTconfig {
     cert_path: String,
     key_path: String,
     client_id: String,
-    topic: String,
 }
 
-fn prepare_awsiot_exporter(path_cfg_awsiot: &str) -> UDCO2SAWSIOTExporter {
+fn prepare_awsiot_exporter(path_cfg_awsiot: &str, topic_awsiot: &str) -> UDCO2SAWSIOTExporter {
     let cfg = Config::builder()
         .add_source(File::with_name(&path_cfg_awsiot))
         .build()
@@ -79,7 +81,7 @@ fn prepare_awsiot_exporter(path_cfg_awsiot: &str) -> UDCO2SAWSIOTExporter {
         .set_reconnect_opts(ReconnectOptions::Always(5));
 
     let (mut mqtt_client, _notifications) = MqttClient::start(mqtt_options).unwrap();
-    mqtt_client.subscribe(&cfg.topic, QoS::AtLeastOnce).unwrap();
+    mqtt_client.subscribe(topic_awsiot, QoS::AtLeastOnce).unwrap();
     let exporter = UDCO2SAWSIOTExporter::new(mqtt_client, cfg.topic);
     exporter
 }

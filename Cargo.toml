@@ -10,6 +10,7 @@ anyhow = "1.0.71"
 chrono = "0.4.26"
 config = "0.13.3"
 hyper = {version = "0.14", features = ["full"] }
+i2c = "0.1.0"
 lazy_static = "1.4.0"
 prometheus = "0.13.3"
 regex = "1.8.3"
@@ -23,5 +24,5 @@ tokio = { version = "1.28.2", features = ["rt","macros","rt-multi-thread"] }
 
 [[bin]]
 name = "udco2s_exporter"
-path = "src/bin/exporter.rs"
+path = "src/bin/udco2s_exporter.rs"
 
