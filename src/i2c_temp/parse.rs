@@ -29,8 +29,10 @@ pub async fn monitor_sht31_temp(
             Ok(_s) => {
                 let data = parse_data(&buf);
                 println!("{data:?}");
-                for c in consumers.iter_mut() {
-                    c.set(&data);
+                if let Some(data) = data {
+                    for c in consumers.iter_mut() {
+                        c.set(&data);
+                    }
                 }
             }
             Err(e) => {
@@ -41,15 +43,19 @@ pub async fn monitor_sht31_temp(
     }
 }
 
-fn parse_data(buf: &[u8]) -> SHT31DATA {
+fn parse_data(buf: &[u8]) -> Option<SHT31DATA> {
     let measured_temp = u16::from(buf[0]) << 8 | u16::from(buf[1]);
     let real_temp = f64::from(measured_temp) * 175. / (((1 << 16) - 1) as f64) - 45.;
     let measured_hum = u16::from(buf[3]) << 8 | u16::from(buf[4]);
     let real_hum = f64::from(measured_hum) * 100. / (((1 << 16) - 1) as f64);
+    // failed
+    if real_hum > 99.0 || real_temp < -40.0 {
+        return None;
+    }
     let ts = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-    SHT31DATA {
+    Some(SHT31DATA {
         timestamp: ts,
         hum: real_hum,
         temp: real_temp,
-    }
+    })
 }
