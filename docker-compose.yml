@@ -1,20 +1,33 @@
-version: '3'
 services:
-  prometheus:
-    image: prom/prometheus
-    user: root 
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin
+      - DOCKER_INFLUXDB_INIT_ORG=private
+      - DOCKER_INFLUXDB_INIT_BUCKET=my-room-monitor
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-secret
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - /tmp/prometheus:/prometheus_data
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus_data' 
-      - '--web.enable-admin-api' 
-    ports:
-      - 9090:9090
+      - influxdb-storage:/var/lib/influxdb2
+
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:latest
+    container_name: grafana
     ports:
-      - 3000:3000
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
-      - prometheus 
+      - influxdb
+
+volumes:
+  influxdb-storage:
+  grafana-storage:

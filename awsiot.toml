@@ -1,5 +1,0 @@
-endpoint = "xxxx.iot.region.amazonaws.com"
-ca_path = "CA.crt" 
-cert_path = "cert.pem"
-key_path = "private.key"
-client_id = "raspi"

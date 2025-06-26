@@ -1,28 +1,15 @@
 [package]
 name = "ud-co2s-monitor"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
 
 [dependencies]
-anyhow = "1.0.71"
-chrono = "0.4.26"
-config = "0.13.3"
-hyper = {version = "0.14", features = ["full"] }
-lazy_static = "1.4.0"
-prometheus = "0.13.3"
-regex = "1.8.3"
-rppal = "0.14.1"
-rumqtt = "0.31.0"
-serde = "1.0.164"
-serde_derive = "1.0.164"
-serde_json = "1.0.97"
-serialport = {version="4.2.1", default-features = false}
-structopt = "0.3.26"
-tokio = { version = "1.28.2", features = ["rt","macros","rt-multi-thread"] }
-
-[[bin]]
-name = "udco2s_exporter"
-path = "src/bin/udco2s_exporter.rs"
-
+chrono = "0.4.41"
+config = "0.15.11"
+futures = "0.3.31"
+regex = "1.11.1"
+reqwest = {version = "0.12.20", default-features = false, features = ["rustls-tls"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serialport = "4.7.2"
+thiserror = "2.0.12"
+tokio = { version = "1.45.1", features = ["fs", "macros", "rt-multi-thread"] }

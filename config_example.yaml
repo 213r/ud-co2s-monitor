@@ -1,0 +1,11 @@
+
+port_name: "/dev/cu.usbmodem1101"
+
+textfile:
+  "path": "/co2_monitoring.txt"
+
+influxdb:
+  org: "my-org"
+  bucket: "co2-monitoring"
+  token: "my-secret"
+

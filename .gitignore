@@ -1,5 +1,2 @@
 /target
-/credentials
-*.toml
-!Cargo.toml
-!awsiot.toml
+config.yaml

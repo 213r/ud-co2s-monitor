@@ -1,23 +1,25 @@
-# UD-CO2S Monitoring
-Graph visualization of CO2 ppm data measured by [UD-CO2S](https://www.iodata.jp/product/tsushin/iot/ud-co2s/) censor device.
-![garafana sample](./fig/grafana.png)
-## tech stack
-rust
-prometheus
-grafana
+# udco2s測定モニター
 
-## How to run
-1. Initiate prometheus exporter.
+このプロジェクトは、CO2センサーからデータを取得し、InfluxDBなどの時系列データベースにエクスポートするRust製のモニタリングツールです。
+
+## 特徴
+
+- CO2センサーからのデータ収集
+- InfluxDBへのデータエクスポート
+- Grafanaによる可視化用ダッシュボード
+
+## 設定
+`config.yaml` に各種設定を記述します。`config_example.yaml`を参考にしてください。
+
+
+## 
 ```
-cargo run -- --port=<device path for serial port> --addr=<your local ip address. Not like '127.0.0.1:9336'>
+docker compose up -d # grafana, influxdbの起動 
+cross run --release  # センサーデータの取得、InfluxDBへのエキスポート
 ```
 
-
-2. write your pc address in targets config of prometheus.yml. (use command: ifconfig).
-3. Intialte prometheus and grafana server. 
+## crossコンパイ (raspi向け)
 ```
-docker-compose up -d
+cargo install cross
+cross build --release --target aarch64-unknown-linux-musl
 ```
-4. You should view grafana dashboard page by accessing localhost:3000.
-
-
